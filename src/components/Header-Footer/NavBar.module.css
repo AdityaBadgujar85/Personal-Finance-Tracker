@@ -1,0 +1,17 @@
+.NavBar-Color{
+ background: linear-gradient(90deg, #0f2027, #203a43, #2c5364);
+}
+h1{
+    color: white;
+}
+.linkDecoration {
+    color: rgb(255, 255, 255);
+    font-weight: 500;
+    text-decoration: none;
+    margin-right: 2rem;
+}
+
+.linkDecoration:hover {
+    color: white;
+    font-weight: 700;
+}

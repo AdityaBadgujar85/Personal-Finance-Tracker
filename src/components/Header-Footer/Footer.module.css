@@ -1,0 +1,19 @@
+.NavBarColor {
+    background: linear-gradient(90deg, #0f2027, #203a43, #2c5364);
+}
+
+.linkDecoration {
+    color: rgb(255, 255, 255);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.linkDecoration:hover {
+    color: white;
+    font-weight: 700;
+}
+footer{
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
