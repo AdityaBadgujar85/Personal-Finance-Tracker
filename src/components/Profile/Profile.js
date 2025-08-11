@@ -59,7 +59,7 @@ function Profile({ currency, setCurrency }) {
   };
 
   return (
-    <Container fluid style={{ marginTop: "5rem"}}>
+    <Container fluid style={{ marginTop: "5rem", marginBottom:"rem"}}>
       <Row className="g-4">
         <Col md={5}>
           <Card
