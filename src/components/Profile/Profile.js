@@ -59,7 +59,7 @@ function Profile({ currency, setCurrency }) {
   };
 
   return (
-    <Container fluid style={{ marginTop: "5rem", marginBottom:"rem"}}>
+    <Container fluid style={{ marginTop: "5rem", marginBottom:"5rem"}}>
       <Row className="g-4">
         <Col md={5}>
           <Card
@@ -134,7 +134,7 @@ function Profile({ currency, setCurrency }) {
             className="shadow-lg border-0 flex-grow-1"
             style={{
               borderRadius: "16px",
-              backgroundColor: "#e6f7f1",
+              backgroundColor: "#ffffffff",
               boxShadow:
                 "0 8px 20px rgba(59, 188, 128, 0.15), 0 4px 10px rgba(0, 0, 0, 0.05)",
             }}
@@ -203,7 +203,7 @@ function Profile({ currency, setCurrency }) {
             className="shadow-lg border-0"
             style={{
               borderRadius: "16px",
-              backgroundColor: "#fff9e6",
+              backgroundColor: "#ffffffff",
               boxShadow:
                 "0 6px 16px rgba(255, 183, 0, 0.15), 0 3px 8px rgba(0, 0, 0, 0.04)",
             }}
