@@ -60,10 +60,10 @@ You can check the deployed project here:
 
 ### 🔹 Notifications
 - Integrated with **React Toastify** for alerts:  
-  - ✅ Transaction added  
-  - ✏️ Transaction updated  
-  - ❌ Transaction deleted  
-  - ⚠️ Budget exceeded  
+  - Transaction added  
+  - Transaction updated  
+  - Transaction deleted  
+  - Budget exceeded  
 
 ---
 
