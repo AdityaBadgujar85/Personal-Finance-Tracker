@@ -1,70 +1,78 @@
-# Getting Started with Create React App
+# Assignment-7 Personal Finance Tracker
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+The **Personal Finance Tracker** is a React application designed to help users manage their finances effectively. It provides insights into income, expenses, budgets, and savings through interactive dashboards, detailed transaction management, and budget monitoring.  
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 Live Demo  
+You can check the deployed project here:  
+🔗 [Personal Finance Tracker - Netlify Link](https://personal-finance-tracker-project-sub.netlify.app/)
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 📌 Features
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 🔹 Global
+- **Global Header and Footer** across the app.  
+- **React Router** navigation between pages.  
+- **Responsive Design** for mobile, tablet, and desktop.  
+- **Data Persistence** using **localStorage** or a mock API.  
+- **Default Data** included for quick start.  
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 🔹 Dashboard Page
+- **Summary Cards:** Total Income, Total Expenses, Remaining Budget, and Savings.  
+- **Interactive Charts:**  
+  - Monthly spending trend (bar/line chart).  
+  - Category-wise expense split (pie chart).  
+- **Today’s Expenses Table:** Lists expenses with **amount, category, and notes**.  
+- **Date Filter:** Narrow down dashboard data to a specific day or range.  
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 🔹 Transactions Page
+- **Transaction Table** with sortable columns:  
+  - Type (Income/Expense)  
+  - Amount  
+  - Category  
+  - Date  
+  - Description (optional)  
+- **Add Transaction Form/Dialog** to capture all fields.  
+- **Edit & Delete** actions for each row.  
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 🔹 Budgets Page
+- Set a **monthly budget per category** (e.g., ₹ 10,000 for Groceries).  
+- **Visual Progress Indicators:** Bars, rings, or meters showing current spend vs. budget.  
+- **Overspend Alerts:** Real-time notifications when any category exceeds its limit.  
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 🔹 Profile Page
+- Display **user details** (Name, Email, etc.).  
+- **Default Currency Dropdown** (₹, $, €, £, …).  
+- Show **Lifetime Total Expenses** and **Total Savings**.  
+- **Edit Profile Button** to update user info.  
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### 🔹 Notifications
+- Integrated with **React Toastify** for alerts:  
+  - ✅ Transaction added  
+  - ✏️ Transaction updated  
+  - ❌ Transaction deleted  
+  - ⚠️ Budget exceeded  
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
+## 🛠️ Tech Stack
+- **React.js** (Functional Components & Hooks)  
+- **React Router DOM** (for navigation)  
+- **React Toastify** (for notifications)  
+- **Context API / Redux** (for state management)  
+- **Chart.js / Recharts** (for interactive charts)  
+- **CSS / Tailwind / Styled Components** (for styling & responsiveness)  
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
