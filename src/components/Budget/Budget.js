@@ -1,225 +1,102 @@
 import React, { useState, useEffect } from "react";
-import {
-  Container,
-  Table,
-  Form,
-  Button,
-  ProgressBar,
-  Alert,
-} from "react-bootstrap";
-import axios from "axios";
+import { Container, Row, Col, Card, Button } from "react-bootstrap";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-function Budget({ currency }) {
-  // API Endpoints
-  const API_TRANSACTIONS = "https://6898ac7fddf05523e55f8904.mockapi.io/Transaction";
-  const API_BUDGETS = "https://6898ac7fddf05523e55f8904.mockapi.io/Budget"; // <-- Create this in MockAPI
-
-  const [budgets, setBudgets] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [newBudget, setNewBudget] = useState({ category: "", amount: "" });
-  const [alertCategory, setAlertCategory] = useState(null);
-
-  // Fetch all budgets
-  const fetchBudgets = async () => {
-    try {
-      const res = await axios.get(API_BUDGETS);
-      setBudgets(res.data || []);
-    } catch (err) {
-      console.error("Error fetching budgets:", err);
+function Budget({ transactions, budgets, setBudgets, currency = "₹" }) {
+  const [category, setCategory] = useState("");
+  const [amount, setAmount] = useState("");
+  const [editingIndex, setEditingIndex] = useState(null);
+  const saveBudget = () => {
+    if (!category || !amount) {
+      toast.error("Please enter category and amount!");
+      return;
     }
+    if (editingIndex !== null) {
+      const updated = [...budgets];
+      updated[editingIndex] = { category, amount: Number(amount) };
+      setBudgets(updated);
+      toast.success("Budget updated!");
+      setEditingIndex(null);
+    } else {
+      setBudgets([...budgets, { category, amount: Number(amount) }]);
+      toast.success("Budget added!");
+    }
+
+    setCategory("");
+    setAmount("");
   };
-
-  // Fetch all transactions
-  const fetchTransactions = async () => {
-    try {
-      const res = await axios.get(API_TRANSACTIONS);
-      setTransactions(res.data || []);
-    } catch (err) {
-      console.error("Error fetching transactions:", err);
-    }
+  const editBudget = (index) => {
+    const b = budgets[index];
+    setCategory(b.category);
+    setAmount(b.amount);
+    setEditingIndex(index);
   };
-
-  // Load data on mount
-  useEffect(() => {
-    fetchBudgets();
-    fetchTransactions();
-  }, []);
-
-  // Calculate "spent" for each budget category
-  useEffect(() => {
-    if (budgets.length > 0 && transactions.length > 0) {
-      const spentByCategory = transactions
-        .filter((t) => (t.type || "").toLowerCase() === "expense")
-        .reduce((acc, t) => {
-          const category = t.category || "Other";
-          acc[category] = (acc[category] || 0) + Number(t.amount || 0);
-          return acc;
-        }, {});
-
-      setBudgets((prev) =>
-        prev.map((b) => ({
-          ...b,
-          spent: spentByCategory[b.category] || 0,
-        }))
-      );
-    }
-  }, [transactions, budgets.length]);
-
-  // Add or Update budget in API
-  const handleAddBudget = async () => {
-    if (!newBudget.category || !newBudget.amount) return;
-
-    try {
-      const existing = budgets.find(
-        (b) => b.category.toLowerCase() === newBudget.category.toLowerCase()
-      );
-
-      if (existing) {
-        // Update existing budget
-        await axios.put(`${API_BUDGETS}/${existing.id}`, {
-          ...existing,
-          amount: Number(newBudget.amount),
-        });
-      } else {
-        // Create new budget
-        await axios.post(API_BUDGETS, {
-          category: newBudget.category,
-          amount: Number(newBudget.amount),
-          spent: 0,
-        });
-      }
-      setNewBudget({ category: "", amount: "" });
-      fetchBudgets();
-    } catch (err) {
-      console.error("Error adding/updating budget:", err);
-    }
+  const deleteBudget = (index) => {
+    const updated = budgets.filter((_, i) => i !== index);
+    setBudgets(updated);
+    toast.info("Budget deleted!");
   };
-
-  // Delete budget from API
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`${API_BUDGETS}/${id}`);
-      fetchBudgets();
-    } catch (err) {
-      console.error("Error deleting budget:", err);
-    }
-  };
-
-  // Show overspending alert
-  useEffect(() => {
-    budgets.forEach((b) => {
-      if (b.spent > b.amount) {
-        setAlertCategory(b.category);
-        setTimeout(() => setAlertCategory(null), 4000);
-      }
-    });
-  }, [budgets]);
+  const getSpent = (cat) =>
+    transactions
+      .filter((t) => t.type === "Expense" && t.category === cat)
+      .reduce((sum, t) => sum + Number(t.amount), 0);
 
   return (
-    <Container className="mt-4" fluid>
-      <h2>Monthly Budgets</h2>
-
-      {alertCategory && (
-        <Alert variant="danger">
-          ⚠ Overspent in <strong>{alertCategory}</strong>!
-        </Alert>
-      )}
-
-      {/* Add / Update Budget */}
-      <Form className="d-flex gap-2 my-3">
-        <Form.Control
-          type="text"
-          placeholder="Category"
-          name="category"
-          value={newBudget.category}
-          onChange={(e) =>
-            setNewBudget({ ...newBudget, category: e.target.value })
-          }
-        />
-        <Form.Control
-          type="number"
-          placeholder={`Budget Amount (${currency})`}
-          name="amount"
-          value={newBudget.amount}
-          onChange={(e) =>
-            setNewBudget({ ...newBudget, amount: e.target.value })
-          }
-        />
-        <Button onClick={handleAddBudget} style={{backgroundColor:'#0f2027',
-                  border:'none'}} onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#2c5364")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#0f2027")
-                }>Add / Update</Button>
-      </Form>
-
-      {/* Budgets Table */}
-      <Table bordered hover responsive>
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Budget ({currency})</th>
-            <th>Spent ({currency})</th>
-            <th>Progress</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {budgets.map((budget) => {
-            const progress =
-              budget.amount > 0
-                ? Math.min((budget.spent / budget.amount) * 100, 100)
-                : 0;
-
-            return (
-              <tr key={budget.id}>
-                <td>{budget.category}</td>
-                <td>{currency} {budget.amount}</td>
-                <td>{currency} {budget.spent || 0}</td>
-                <td>
-                  <ProgressBar
-                    now={progress}
-                    label={`${progress.toFixed(0)}%`}
-                    style={{
-                      height: "30px",
-                      fontSize: "16px",
-                      fontWeight: "bold",
-                      borderRadius: "25px",
-                      overflow: "hidden",
-                    }}
-                    variant={
-                      budget.spent > budget.amount
-                        ? "danger"
-                        : budget.spent / budget.amount > 0.8
-                        ? "warning"
-                        : "success"
-                    }
-                  />
-                </td>
-                <td>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(budget.id)}
-                  >
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            );
-          })}
-          {budgets.length === 0 && (
-            <tr>
-              <td colSpan="5" className="text-center">
-                No budgets added yet.
-              </td>
-            </tr>
+    <Container style={{marginTop:'6rem'}}>
+      <ToastContainer position="top-right" autoClose={2000} />
+      <Row className="mb-3">
+        <Col><h2>Monthly Budgets</h2></Col>
+      </Row>
+      <Row className="mb-4">
+        <Col md={4}>
+          <input type="text" placeholder="Category" value={category} onChange={(e) => setCategory(e.target.value)} className="form-control"/>
+        </Col>
+        <Col md={4}>
+          <input type="number" placeholder="Budget Amount" value={amount} onChange={(e) => setAmount(e.target.value)} className="form-control"/>
+        </Col>
+        <Col md={4}>
+          <Button onClick={saveBudget}>
+            {editingIndex !== null ? "Update Budget" : "Add Budget"}
+          </Button>
+          {editingIndex !== null && (
+            <Button onClick={() => { setEditingIndex(null); setCategory(""); setAmount(""); }} className="ms-2">
+              Cancel
+            </Button>
           )}
-        </tbody>
-      </Table>
+        </Col>
+      </Row>
+      <Row>
+        {budgets.length === 0 ? (
+          <Col><p>No budgets yet</p></Col>
+        ) : (
+          budgets.map((b, i) => {
+            const spent = getSpent(b.category);
+            const percent = Math.min((spent / b.amount) * 100, 100);
+
+            if (spent > b.amount) {
+              toast.warn(`Budget exceeded for ${b.category}!`);
+            }
+            return (
+              <Col md={6} key={i} className="mb-3">
+                <Card body>
+                  <h5>{b.category}</h5>
+                  <p>Budget: {currency}{b.amount} | Spent: {currency}{spent}</p>
+                  <div style={{ height: 20, width: "100%", background: "#ddd", borderRadius: 5 }}>
+                    <div style={{width: `${percent}%`,height: "100%",background: spent > b.amount ? "red" : "green",borderRadius: 5}}/>
+                  </div>
+                  {spent > b.amount && <p className="text-danger mt-2">Overspent!</p>}
+                  <div className="mt-2">
+                    <Button size="sm" onClick={() => editBudget(i)} className="me-2">Edit</Button>
+                    <Button size="sm" variant="danger" onClick={() => deleteBudget(i)}>Delete</Button>
+                  </div>
+                </Card>
+              </Col>
+            );
+          })
+        )}
+      </Row>
     </Container>
   );
 }
-
 export default Budget;

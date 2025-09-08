@@ -5,11 +5,11 @@ import classes from './Footer.module.css';
 
 function Footer() {
     return (
-        <footer className={`${classes.NavBarColor} py-3 mt-5`}>
+        <footer className={classes.NavBarColor}>
             <Container>
                 <Row className="text-center">
                     <Col>
-                        <h5 className="text-white mb-2">
+                        <h5 className="text-white">
                             © {new Date().getFullYear()} Finance
                         </h5>
                     </Col>

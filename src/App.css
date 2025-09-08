@@ -1,7 +1,18 @@
 .App {
+  min-height: 100vh;      
+  display: flex;           
+  flex-direction: column;  
+}
+main {
+  flex: 1;                  
+}
+footer {
+  margin-top: auto;         
+  background: #203a43;     
+  color: white;
+  padding: 1rem;
   text-align: center;
 }
-
 .App-logo {
   height: 40vmin;
   pointer-events: none;
