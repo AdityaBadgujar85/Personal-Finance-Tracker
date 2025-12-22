@@ -1,0 +1,74 @@
+.mainContainer {
+  height: 100%;
+  min-height: 75vh;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.heading {
+  margin-bottom: 1.5rem;
+}
+
+.profileCard {
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.imageWrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.profileImg {
+  width: 10rem;
+  height: 10rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.cardTitle {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+
+.field label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.field input{
+  width: 100%;
+  padding: 6px;
+}
+
+.field select {
+  width: 100%;
+  padding: 6px;
+}
+
+.field p {
+  margin: 0;
+}
+
+.editBtn {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.summaryCard {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.amount {
+  font-size: 1.5rem;
+  font-weight: bold;
+}

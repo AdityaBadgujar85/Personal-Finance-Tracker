@@ -1,0 +1,28 @@
+.BrandDesign h1{
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin: 0;
+    color: white;
+    font-family:serif;
+}
+.NavContainer{
+    background-color: #234C6A;
+    margin: 0;
+}
+.navLinkDesign{
+    color: white;
+    font-weight: 500;
+    font-family: serif;
+    text-decoration: none;
+    
+}
+.navLinksContainer{
+    display: flex;
+    margin-left: auto;
+    flex-direction: row;
+    gap: 2rem;
+    padding-right: 2rem;
+}
+.navLinksContainer :hover{
+     font-weight: 900;
+}

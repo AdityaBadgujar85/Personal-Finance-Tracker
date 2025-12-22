@@ -1,0 +1,48 @@
+.mainContainer{
+    margin: 0;
+    background-color: #234C6A;
+    padding-top: 1rem;
+}
+.container{
+    padding: 0;
+}
+.navLinkDesign{
+    color: white;
+    font-weight: 500;
+    font-family: serif;
+    text-decoration: none;
+}
+.navLinkDesign:hover{
+    font-weight: 900;
+}
+.brandh1{
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin: 0;
+    color: white;
+    font-family:serif;
+}
+.navLinksContainer{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+}
+.iconContainer{
+    margin:0;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 2rem;
+    align-items: center;
+    color: white;
+}
+.iconContainer > a{
+    color: white;
+}
+
+.rightsContainer{
+    margin: 0;
+    color: white;
+    font-family: serif;
+}
