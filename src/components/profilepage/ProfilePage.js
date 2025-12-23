@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Card, Button } from "react-bootstrap";
+import React, { useEffect, useState } from "react";
+import { Container, Card, Row, Col } from "react-bootstrap";
 import classes from "./Profile.module.css";
 
 function ProfilePage() {
-  const [profileDetails, setProfileDetails] = useState({
-    name: "",
-    email: "",
-    currency: "₹",
-  });
-
-  const [editMode, setEditMode] = useState(false);
-  const [totalIncome, setTotalIncome] = useState(0);
-  const [totalExpense, setTotalExpense] = useState(0);
-
+  const [currency, setCurrency] = useState("₹");
+  const [income, setIncome] = useState(0);
+  const [expense, setExpense] = useState(0);
+  const [loaded, setLoaded] = useState(false);
   const rates = {
     "₹": 1,
     "$": 0.012,
@@ -20,119 +14,85 @@ function ProfilePage() {
     "£": 0.0095,
   };
 
-  function convert(amount) {
-    return (amount * rates[profileDetails.currency]).toFixed(2);
+  function convert(value) {
+    return (value * rates[currency]).toFixed(2);
   }
-
   useEffect(() => {
     const savedProfile = JSON.parse(localStorage.getItem("profile"));
-    if (savedProfile) {
-      setProfileDetails(savedProfile);
+    if (savedProfile && savedProfile.currency) {
+      setCurrency(savedProfile.currency);
     }
 
     const transactions =
       JSON.parse(localStorage.getItem("transactions")) || [];
 
-    let income = 0;
-    let expense = 0;
+    let inc = 0;
+    let exp = 0;
 
     for (let i = 0; i < transactions.length; i++) {
       if (transactions[i].type === "Income") {
-        income += Number(transactions[i].amount);
-      }
-
-      if (transactions[i].type === "Expense") {
-        expense += Number(transactions[i].amount);
+        inc += Number(transactions[i].amount || 0);
+      } else {
+        exp += Number(transactions[i].amount || 0);
       }
     }
 
-    setTotalIncome(income);
-    setTotalExpense(expense);
+    setIncome(inc);
+    setExpense(exp);
+    setLoaded(true);
   }, []);
 
-  const savings = totalIncome - totalExpense;
 
-  function updateProfile(e) {
-    setProfileDetails({
-      ...profileDetails,
-      [e.target.name]: e.target.value,
-    });
-  }
+  useEffect(() => {
+    if (loaded) {
+      localStorage.setItem("profile", JSON.stringify({ currency }));
+    }
+  }, [currency, loaded]);
 
-  function saveProfile() {
-    localStorage.setItem("profile", JSON.stringify(profileDetails));
-    setEditMode(false);
-  }
+  const remaining = income - expense;
 
   return (
     <Container className={classes.mainContainer}>
-      <h2 className={classes.heading}>Profile</h2>
+      <Card className={classes.profileWrapper}>
+        <Row className={classes.topRow}>
+          <Col md={6} className={classes.userInfo}>
+            <img src={require("../Img/Profile.jpg")} alt="Profile" className={classes.profileImg}/>
+            <div>
+              <h4>Aditya Badgujar</h4>
+              <p>aditya@gmail.com</p>
+            </div>
+          </Col>
+        </Row>
 
-      <Row>
-        <Col md={6}>
-          <Card className={classes.profileCard}>
-            <Card.Body>
-              <img src={require("../Img/Profile.jpg")} className={classes.profileImg} alt="Profile"/>
-              <h4>User Details</h4>
-              <div className={classes.field}>
-                <label>Name</label>
-                {editMode ? (
-                  <input name="name" value={profileDetails.name} onChange={updateProfile}/>
-                ) : (
-                  <p>{profileDetails.name}</p>
-                )}
-              </div>
+        <hr />
 
-              <div className={classes.field}>
-                <label>Email</label>
-                {editMode ? (
-                  <input name="email" value={profileDetails.email} onChange={updateProfile}/>
-                ) : (
-                  <p>{profileDetails.email}</p>
-                )}
-              </div>
+        <Row className={classes.statsRow}>
+          <Col md={3}>
+            <p className={classes.statTitle}>Currency</p>
+            <select className="form-select" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+              <option value="₹">₹ Rupee</option>
+              <option value="$">$ Dollar</option>
+              <option value="€">€ Euro</option>
+              <option value="£">£ Pound</option>
+            </select>
+          </Col>
 
-              <div className={classes.field}>
-                <label>Currency</label>
-                {editMode ? (
-                  <select name="currency" value={profileDetails.currency} onChange={updateProfile}>
-                    <option value="₹">₹ Rupee</option>
-                    <option value="$">$ Dollar</option>
-                    <option value="€">€ Euro</option>
-                    <option value="£">£ Pound</option>
-                  </select>
-                ) : (
-                  <p>{profileDetails.currency}</p>
-                )}
-              </div>
+          <Col md={3}>
+            <p className={classes.statTitle}>Total Income</p>
+            <h3>{currency} {convert(income)}</h3>
+          </Col>
 
-              <Button className={classes.editBtn} onClick={editMode ? saveProfile : () => setEditMode(true)}>
-                {editMode ? "Save Profile" : "Edit Profile"}
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
+          <Col md={3}>
+            <p className={classes.statTitle}>Total Expense</p>
+            <h3>{currency} {convert(expense)}</h3>
+          </Col>
 
-        <Col md={6}>
-          <Card className={classes.summaryCard}>
-            <Card.Body>
-              <h4>Total Expense</h4>
-              <p className={classes.amount}>
-                {profileDetails.currency} {convert(totalExpense)}
-              </p>
-            </Card.Body>
-          </Card>
-
-          <Card className={classes.summaryCard}>
-            <Card.Body>
-              <h4>Total Savings</h4>
-              <p className={classes.amount}>
-                {profileDetails.currency} {convert(savings)}
-              </p>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+          <Col md={3}>
+            <p className={classes.statTitle}>Remaining</p>
+            <h3>{currency} {convert(remaining)}</h3>
+          </Col>
+        </Row>
+      </Card>
     </Container>
   );
 }

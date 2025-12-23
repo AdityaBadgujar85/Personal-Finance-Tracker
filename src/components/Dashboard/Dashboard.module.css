@@ -1,0 +1,67 @@
+.pageTitle {
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.summaryCard {
+  border-radius: 12px;
+  text-align: center;
+}
+
+.summaryValue {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.chartCard {
+  border-radius: 12px;
+}
+
+.expenseTable {
+  width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  overflow-x: auto;
+  box-shadow: 0 0 0 1px #eee;
+}
+
+.expenseTable table {
+  width: 100%;
+  font-size: 14px;
+  
+}
+
+.expenseTable thead {
+  background-color: #f6f7fb;
+}
+
+.expenseTable th {
+  padding: 14px 16px;
+  font-weight: 600;
+  color: #555;
+}
+
+.expenseTable td {
+  padding: 14px 16px;
+  color: #333;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.expenseTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.empty {
+  text-align: center;
+  padding: 20px;
+  color: #777;
+}
+
+.tag {
+  background-color: #fde2e2;
+  color: #d6336c;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}

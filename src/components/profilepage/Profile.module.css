@@ -1,74 +1,56 @@
 .mainContainer {
-  height: 100%;
-  min-height: 75vh;
   margin-top: 2rem;
+  min-height: 72vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.heading {
-  margin-bottom: 1.5rem;
+.profileWrapper {
+  padding: 2rem;
+  border-radius: 12px;
 }
 
-.profileCard {
-  padding: 1rem;
-  margin-bottom: 2rem;
+.topRow {
+  align-items: center;
 }
 
-.imageWrapper {
+.userInfo {
   display: flex;
-  justify-content: center;
-  margin-bottom: 1rem;
+  align-items: center;
+  gap: 1rem;
+  text-align: left;
 }
 
 .profileImg {
-  width: 10rem;
-  height: 10rem;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.cardTitle {
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-.field {
-  margin-bottom: 1rem;
-}
-
-.field label {
-  font-weight: 600;
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-.field input{
-  width: 100%;
-  padding: 6px;
-}
-
-.field select {
-  width: 100%;
-  padding: 6px;
-}
-
-.field p {
+.userInfo h4 {
   margin: 0;
+  font-weight: 600;
 }
 
-.editBtn {
-  margin-top: 1rem;
-  width: 100%;
+.userInfo p {
+  margin: 0;
+  color: gray;
+  font-size: 0.9rem;
 }
 
-.summaryCard {
-  margin-bottom: 1.5rem;
-  text-align: center;
+.statsRow {
+  margin-top: 1.5rem;
+  text-align: left;
 }
 
-.amount {
-  font-size: 1.5rem;
-  font-weight: bold;
+.statTitle {
+  color: gray;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.statsRow h3 {
+  font-weight: 600;
 }

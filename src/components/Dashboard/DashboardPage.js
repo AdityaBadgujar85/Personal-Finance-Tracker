@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import {LineChart,Line,XAxis,YAxis,Tooltip,CartesianGrid,PieChart,Pie,Legend,Cell,ResponsiveContainer} from "recharts";
-
+import classes from "./Dashboard.module.css";
 
 function DashboardPage() {
-  const [list, setList] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [view, setView] = useState("monthly");
 
   const profile = JSON.parse(localStorage.getItem("profile")) || {};
-  const currency = profile.currency || "₹";
+  const selectedCurrency = profile.currency || "₹";
 
   const rates = {
     "₹": 1,
@@ -19,16 +19,23 @@ function DashboardPage() {
     "£": 0.0095,
   };
 
-  function convert(val) {
-    return (val * rates[currency]).toFixed(2);
+  function convertAmount(value, fromCurrency) {
+    const source = fromCurrency || "₹";
+
+    if (source === selectedCurrency) {
+      return Number(value);
+    }
+
+    const inINR = Number(value) / rates[source];
+    return inINR * rates[selectedCurrency];
   }
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("transactions")) || [];
-    setList(saved);
+    setTransactions(saved);
   }, []);
 
-  const filtered = list.filter((item) => {
+  const filteredList = transactions.filter((item) => {
     if (fromDate && item.date < fromDate) return false;
     if (toDate && item.date > toDate) return false;
     return true;
@@ -37,21 +44,22 @@ function DashboardPage() {
   let income = 0;
   let expense = 0;
 
-  for (let i = 0; i < filtered.length; i++) {
-    if (filtered[i].type === "Income") {
-      income += Number(filtered[i].amount);
+  for (let i = 0; i < filteredList.length; i++) {
+    const item = filteredList[i];
+
+    if (item.type === "Income") {
+      income += convertAmount(item.amount, item.currency);
     }
-    if (filtered[i].type === "Expense") {
-      expense += Number(filtered[i].amount);
+
+    if (item.type === "Expense") {
+      expense += convertAmount(item.amount, item.currency);
     }
   }
 
   const balance = income - expense;
 
-  function getKey(date) {
-    if (view === "daily") {
-      return date;
-    }
+  function getGroupKey(date) {
+    if (view === "daily") return date;
 
     if (view === "weekly") {
       const d = new Date(date);
@@ -64,44 +72,40 @@ function DashboardPage() {
 
   const lineMap = {};
 
-  for (let i = 0; i < filtered.length; i++) {
-    const t = filtered[i];
+  for (let i = 0; i < filteredList.length; i++) {
+    const item = filteredList[i];
 
-    if (t.type === "Expense") {
-      const key = getKey(t.date);
+    if (item.type === "Expense") {
+      const key = getGroupKey(item.date);
 
-      if (!lineMap[key]) {
-        lineMap[key] = 0;
-      }
+      if (!lineMap[key]) lineMap[key] = 0;
 
-      lineMap[key] = lineMap[key] + Number(t.amount);
+      lineMap[key] += convertAmount(item.amount, item.currency);
     }
   }
 
-  const lineData = Object.keys(lineMap).map((k) => ({
-    label: k,
-    amount: Number(convert(lineMap[k])),
+  const lineData = Object.keys(lineMap).map((key) => ({
+    label: key,
+    amount: Number(lineMap[key].toFixed(2)),
   }));
 
   const pieMap = {};
 
-  for (let i = 0; i < filtered.length; i++) {
-    const t = filtered[i];
+  for (let i = 0; i < filteredList.length; i++) {
+    const item = filteredList[i];
 
-    if (t.type === "Expense") {
-      const cat = t.category || "Other";
+    if (item.type === "Expense") {
+      const category = item.category || "Other";
 
-      if (!pieMap[cat]) {
-        pieMap[cat] = 0;
-      }
+      if (!pieMap[category]) pieMap[category] = 0;
 
-      pieMap[cat] = pieMap[cat] + Number(t.amount);
+      pieMap[category] += convertAmount(item.amount, item.currency);
     }
   }
 
-  const pieData = Object.keys(pieMap).map((c) => ({
-    name: c,
-    value: Number(convert(pieMap[c])),
+  const pieData = Object.keys(pieMap).map((key) => ({
+    name: key,
+    value: Number(pieMap[key].toFixed(2)),
   }));
 
   const remaining = income - expense;
@@ -109,23 +113,28 @@ function DashboardPage() {
   if (remaining > 0) {
     pieData.push({
       name: "Income",
-      value: Number(convert(remaining)),
+      value: Number(remaining.toFixed(2)),
     });
   }
 
-  const colors = ["#ff4d4f", "#ffbb28", "#00c49f", "#0088fe", "#a28cf0"];
+  const colors = ["#ff4d4f", "#ffbb28", "#0088fe", "#a28cf0"];
 
   const selectedDate = toDate || fromDate;
 
-  const tableList = filtered.filter((t) => {
-    if (t.type !== "Expense") return false;
-    if (selectedDate && t.date !== selectedDate) return false;
+  const expenseTable = filteredList.filter((item) => {
+    if (item.type !== "Expense") return false;
+    if (selectedDate && item.date !== selectedDate) return false;
     return true;
   });
 
+  function formatCurrency(value) {
+  return `${selectedCurrency} ${Number(value).toFixed(2)}`;
+}
+
   return (
     <Container className="mt-4 mb-5">
-      <h2>Dashboard</h2>
+      <h2 className={classes.pageTitle}>Dashboard</h2>
+
       <Row className="mb-3">
         <Col md={4}>
           <label>From</label>
@@ -140,37 +149,37 @@ function DashboardPage() {
 
       <Row className="mb-4">
         <Col md={3}>
-          <Card>
+          <Card className={classes.summaryCard}>
             <Card.Body>
               <Card.Title>Income</Card.Title>
-              {currency} {convert(income)}
+              {selectedCurrency} {income.toFixed(2)}
             </Card.Body>
           </Card>
         </Col>
 
         <Col md={3}>
-          <Card>
+          <Card className={classes.summaryCard}>
             <Card.Body>
               <Card.Title>Expense</Card.Title>
-              {currency} {convert(expense)}
+              {selectedCurrency} {expense.toFixed(2)}
             </Card.Body>
           </Card>
         </Col>
 
         <Col md={3}>
-          <Card>
+          <Card className={classes.summaryCard}>
             <Card.Body>
               <Card.Title>Balance</Card.Title>
-              {currency} {convert(balance)}
+              {selectedCurrency} {balance.toFixed(2)}
             </Card.Body>
           </Card>
         </Col>
 
         <Col md={3}>
-          <Card>
+          <Card className={classes.summaryCard}>
             <Card.Body>
               <Card.Title>Savings</Card.Title>
-              {currency} {convert(balance)}
+              {selectedCurrency} {balance.toFixed(2)}
             </Card.Body>
           </Card>
         </Col>
@@ -178,7 +187,7 @@ function DashboardPage() {
 
       <Row className="mb-4">
         <Col md={6}>
-          <Card>
+          <Card className={classes.chartCard}>
             <Card.Body>
               <Card.Title>Expense Trend</Card.Title>
 
@@ -188,44 +197,39 @@ function DashboardPage() {
                 <option value="monthly">Monthly</option>
               </select>
 
-              <div style={{ width: "100%", height: 250 }}>
+              <div style={{ height: 250 }}>
                 <ResponsiveContainer>
                   <LineChart data={lineData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" />
-                    <YAxis />
-                    <Tooltip />
+                      <YAxis tickFormatter={(val) => formatCurrency(val)} />
+                      <Tooltip formatter={(val) => formatCurrency(val)} />
                     <Line dataKey="amount" stroke="#ff4d4f" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-
             </Card.Body>
           </Card>
         </Col>
 
         <Col md={6}>
-          <Card>
+          <Card className={classes.chartCard}>
             <Card.Body>
               <Card.Title>Expense Categories & Income</Card.Title>
 
-              {pieData.length === 0 ? (
-                <p className="text-center">No data available</p>
-              ) : (
-                <div style={{ width: "100%", height: 300 }}>
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={80} label>
-                        {pieData.map((_, i) => (
-                          <Cell key={i} fill={colors[i % colors.length]} />
+              <div style={{ height: 300 }}>
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie data={pieData} dataKey="value" outerRadius={80}>
+                      {pieData.map((entry, i) => (
+                        <Cell key={i} fill={entry.name === "Income" ? "#00c49f": colors[i % colors.length]}/>
                         ))}
-                      </Pie>
-                      <Legend />
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
+                    </Pie>
+                    <Legend />
+                    <Tooltip formatter={(val) => formatCurrency(val)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </Card.Body>
           </Card>
         </Col>
@@ -235,35 +239,44 @@ function DashboardPage() {
         <Col>
           <h4>Expenses</h4>
 
-          <table className="table table-bordered">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Amount</th>
-                <th>Category</th>
-                <th>Note</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {tableList.length === 0 ? (
+          <div className={classes.expenseTable}>
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan="4" className="text-center">
-                    No expenses found
-                  </td>
+                  <th>S.No</th>
+                  <th>Amount</th>
+                  <th>Category</th>
+                  <th>Note</th>
                 </tr>
-              ) : (
-                tableList.map((t, i) => (
-                  <tr key={i}>
-                    <td>{i + 1}</td>
-                    <td>{currency} {convert(t.amount)}</td>
-                    <td>{t.category}</td>
-                    <td>{t.description}</td>
+              </thead>
+
+              <tbody>
+                {expenseTable.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className={classes.empty}>
+                      No expenses found
+                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  expenseTable.map((item, i) => (
+                    <tr key={i}>
+                      <td>{i + 1}</td>
+                      <td>
+                        {selectedCurrency}{" "}
+                        {convertAmount(item.amount, item.currency).toFixed(2)}
+                      </td>
+                      <td>
+                        <span className={classes.tag}>
+                          {item.category}
+                        </span>
+                      </td>
+                      <td>{item.description || "-"}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </Col>
       </Row>
     </Container>

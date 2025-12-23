@@ -1,12 +1,13 @@
 import React from "react";
-import { Container, Row, Col, Button } from "react-bootstrap";
+import { Container, Row, Col } from "react-bootstrap";
 import classes from "./Transaction.module.css";
+import { MdEdit, MdDelete } from "react-icons/md";
 
 function Transaction(props) {
   const { transactions, EditFunction, DeleteFunction } = props;
 
   const profile = JSON.parse(localStorage.getItem("profile")) || {};
-  const currency = profile.currency || "₹";
+  const selectedCurrency = profile.currency || "₹";
 
   const rates = {
     "₹": 1,
@@ -15,49 +16,65 @@ function Transaction(props) {
     "£": 0.0095,
   };
 
-  function convert(amount) {
-    return (amount * rates[currency]).toFixed(2);
+  function showAmount(amount, fromCurrency) {
+    const sourceCurrency = fromCurrency || "₹";
+
+    if (sourceCurrency === selectedCurrency) {
+      return Number(amount).toFixed(2);
+    }
+
+    const amountInINR = Number(amount) / rates[sourceCurrency];
+    return (amountInINR * rates[selectedCurrency]).toFixed(2);
   }
 
   return (
-    <Container className="mt-5 p-0">
+    <Container className="mt-3 p-0">
       <Row>
         <Col>
-          <h2>Transactions</h2>
-
-          <div className={classes.tableWrapper}>
-            <table className="table table-bordered table-striped mt-3">
-              <thead>
+          <div className={classes.tableDesign}>
+            <table className="table">
+              <thead className="table-light">
                 <tr>
                   <th>Type</th>
                   <th>Amount</th>
                   <th>Category</th>
                   <th>Date</th>
                   <th>Description</th>
-                  <th>Action</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
 
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: "center" }}>
+                    <td colSpan="6" className="text-center py-4">
                       No transaction yet
                     </td>
                   </tr>
                 ) : (
-                  transactions.map((t, i) => (
-                    <tr key={i}>
+                  transactions.map((t, index) => (
+                    <tr key={index}>
                       <td>{t.type}</td>
-                      <td>
-                        {currency} {convert(t.amount)}
+                      <td className={classes.amount}>
+                        {selectedCurrency}{" "}
+                        {showAmount(t.amount, t.currency)}
                       </td>
-                      <td>{t.category}</td>
-                      <td>{t.date}</td>
-                      <td>{t.description}</td>
                       <td>
-                        <Button size="sm" variant="outline-secondary" onClick={() => EditFunction(i)}>Edit</Button>
-                        <Button size="sm" variant="outline-danger" className="ms-2" onClick={() => DeleteFunction(i)}>Delete</Button>
+                        <span className={classes.tag}>
+                          {t.category || "Other"}
+                        </span>
+                      </td>
+                      <td>{t.date}</td>
+                      <td>{t.description || "-"}</td>
+                      <td>
+                        <div className={classes.actions}>
+                          <span className={classes.actionBtn} onClick={() => EditFunction(index)}>
+                            <MdEdit size={20}/>
+                          </span>
+                          <span className={classes.actionBtn} onClick={() => DeleteFunction(index)}>
+                            <MdDelete size={20}/>
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   ))

@@ -1,139 +1,200 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Button } from "react-bootstrap";
+import { Container, Row, Col, Button, Modal } from "react-bootstrap";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Transaction from "./Transaction";
 import classes from "./TransactionForm.module.css";
 
 function TransactionFormPage() {
-  const [currentSlip, setCurrentSlip] = useState({
+  const profile = JSON.parse(localStorage.getItem("profile")) || {};
+  const selectedCurrency = profile.currency || "₹";
+
+  const [showForm, setShowForm] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
+
+  const [formValues, setFormValues] = useState({
     type: "Income",
     amount: "",
     category: "",
     date: "",
     description: "",
+    currency: selectedCurrency,
   });
 
-  const [moneyList, setMoneyList] = useState(() =>
+  const [transactionList, setTransactionList] = useState(
     JSON.parse(localStorage.getItem("transactions") || "[]")
   );
 
-  const [editingRow, setEditingRow] = useState(null);
-
   useEffect(() => {
-    localStorage.setItem("transactions", JSON.stringify(moneyList));
-  }, [moneyList]);
+    localStorage.setItem("transactions", JSON.stringify(transactionList));
+  }, [transactionList]);
 
   function handleChange(e) {
     const { name, value } = e.target;
-
-    if (name === "amount") {
-      setCurrentSlip({ ...currentSlip, amount: Number(value) });
-    } else {
-      setCurrentSlip({ ...currentSlip, [name]: value });
-    }
+    setFormValues({ ...formValues, [name]: value });
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-
-    const { type, amount, category, date, description } = currentSlip;
-    if (!type || !amount || !category || !date || !description) {
-      toast.error("All fields are required!");
-      return;
-    }
-
-    const today = new Date().toISOString().split("T")[0];
-    if (date > today) {
-      toast.error("Date cannot be greater than today!");
-      return;
-    }
-
-    const totalIncome = moneyList
-      .filter((t) => t.type === "Income")
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-
-    const totalExpense = moneyList
-      .filter((t) => t.type === "Expense")
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-
-    if (
-      type === "Expense" &&
-      totalExpense + amount > totalIncome
-    ) {
-      toast.error("Expense cannot be more than total income!");
-      return;
-    }
-
-    if (editingRow !== null) {
-      const updated = [...moneyList];
-      updated[editingRow] = currentSlip;
-      setMoneyList(updated);
-      setEditingRow(null);
-      toast.success("Transaction updated successfully");
-    } else {
-      setMoneyList([...moneyList, currentSlip]);
-      toast.success("Transaction added successfully");
-    }
-
-    setCurrentSlip({
+  function resetForm() {
+    setFormValues({
       type: "Income",
       amount: "",
       category: "",
       date: "",
       description: "",
+      currency: selectedCurrency,
     });
+    setEditingIndex(null);
+    setShowForm(false);
   }
 
-  function handleDelete(index) {
-    const updated = [...moneyList];
-    updated.splice(index, 1);
-    setMoneyList(updated);
-    toast.success("Transaction deleted");
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    const { type, amount, category, date, description } = formValues;
+
+    if (!type || !amount || !category || !date || !description) {
+      toast.error("All fields required");
+      return;
+    }
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    transactionList.forEach((item, index) => {
+      if (editingIndex !== null && index === editingIndex) 
+        return;
+
+      if (item.type === "Income") 
+        totalIncome += Number(item.amount);
+      if (item.type === "Expense") 
+        totalExpense += Number(item.amount);
+    });
+
+    if (
+      type === "Expense" &&
+      totalExpense + Number(amount) > totalIncome
+    ) {
+      toast.error("Expense cannot be more than income");
+      return;
+    }
+
+    if (editingIndex !== null) {
+      const updated = [...transactionList];
+      updated[editingIndex] = formValues;
+      setTransactionList(updated);
+      toast.success("Transaction updated");
+    } else {
+      setTransactionList([...transactionList, formValues]);
+      toast.success("Transaction added");
+    }
+
+    resetForm();
   }
 
   function handleEdit(index) {
-    setCurrentSlip(moneyList[index]);
-    setEditingRow(index);
+    setFormValues(transactionList[index]);
+    setEditingIndex(index);
+    setShowForm(true);
+  }
+
+  function askDelete(index) {
+    setDeleteIndex(index);
+    setShowDelete(true);
+  }
+
+  function confirmDelete() {
+    const item = transactionList[deleteIndex];
+
+    if (item.type === "Income") {
+      let income = 0;
+      let expense = 0;
+
+      transactionList.forEach((t, i) => {
+        if (i !== deleteIndex) {
+          if (t.type === "Income") income += Number(t.amount);
+          if (t.type === "Expense") expense += Number(t.amount);
+        }
+      });
+
+      if (expense > income) {
+        toast.error("Cannot delete income. Expenses depend on it.");
+        setShowDelete(false);
+        return;
+      }
+    }
+
+    const updated = [...transactionList];
+    updated.splice(deleteIndex, 1);
+    setTransactionList(updated);
+    toast.success("Transaction deleted");
+    setShowDelete(false);
   }
 
   return (
     <Container className={classes.mainContainer}>
-      <ToastContainer position="top-right" autoClose={2000} />
+      <ToastContainer autoClose={2000} />
 
-      <h2>{editingRow !== null ? "Edit Transaction" : "Add Transaction"}</h2>
-      <Row className="px-2">
-      <form onSubmit={handleSubmit}>
-        <Row className="d-flex gap-2">
-          <Col xs={6} className="p-0">
+      <Row>
+        <Col style={{ display: "flex", justifyContent: "space-between" }}>
+          <h2>Transactions</h2>
+          <Button onClick={() => setShowForm(true)}>Add Transaction</Button>
+        </Col>
+      </Row>
+
+      <Modal show={showForm} onHide={resetForm} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {editingIndex !== null ? "Edit Transaction" : "Add Transaction"}
+          </Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <form onSubmit={handleSubmit}>
             <label>Type</label>
-            <select name="type" className="form-select" value={currentSlip.type} onChange={handleChange}>
+            <select name="type" className="form-select" value={formValues.type} onChange={handleChange}>
               <option>Income</option>
               <option>Expense</option>
             </select>
 
-            <label className="mt-2">Amount</label>
-            <input name="amount" type="number" className="form-control" value={currentSlip.amount} onChange={handleChange}/>
-          </Col>
+            <label className="mt-2"> Amount ({selectedCurrency})</label>
+            <input name="amount" type="number" className="form-control" value={formValues.amount} onChange={handleChange}/>
 
-          <Col className="p-0">
-            <label>Category</label>
-            <input name="category" type="text" placeholder="eg: Salary, Food, Entertainment" className="form-control" value={currentSlip.category} onChange={handleChange}/>
+            <label className="mt-2">Category</label>
+            <input name="category" className="form-control" value={formValues.category} onChange={handleChange}/>
 
-           <label className="mt-2">Date</label>
-            <input name="date" type="date" className="form-control" value={currentSlip.date} onChange={handleChange}/>
-          </Col>
-        </Row>
-        <Row>   
-           <label className="mt-2">Description</label>
-            <textarea name="description" type="text" placeholder="eg: Entertainent: Movies" className="form-control" value={currentSlip.description} onChange={handleChange}/>
-          <Button type="submit" className="mt-3">
-              {editingRow !== null ? "Update" : "Add"}
-            </Button>
-        </Row>
-      </form>
-      </Row>
-        <Transaction transactions={moneyList} DeleteFunction={handleDelete} EditFunction={handleEdit}/>
+            <label className="mt-2">Date</label>
+            <input name="date" type="date" className="form-control" max={new Date().toISOString().split("T")[0]} value={formValues.date} onChange={handleChange}/>
+
+            <label className="mt-2">Description</label>
+            <textarea name="description" className="form-control" value={formValues.description} onChange={handleChange}/>
+            <div className="d-flex justify-content-end gap-2 mt-3">
+              <Button variant="secondary" onClick={resetForm}> Cancel </Button>
+              <Button type="submit">
+                {editingIndex !== null ? "Update" : "Add"}
+              </Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
+
+      <Modal show={showDelete} onHide={() => setShowDelete(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Delete</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          Are you sure you want to delete this transaction?
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDelete(false)}> Cancel </Button>
+          <Button variant="danger" onClick={confirmDelete}> Delete</Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Transaction transactions={transactionList} EditFunction={handleEdit} DeleteFunction={askDelete}/>
     </Container>
   );
 }

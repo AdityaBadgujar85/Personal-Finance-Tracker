@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Button } from "react-bootstrap";
+import { Container, Row, Col, Button, Modal } from "react-bootstrap";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import classes from "./BudgetPage.module.css";
+import { MdEdit, MdDelete } from "react-icons/md";
 
 function BudgetsPage() {
-  const savedBudgets = JSON.parse(localStorage.getItem("budgets"));
-  const [budgets, setBudgets] = useState(savedBudgets || []);
+  const profile = JSON.parse(localStorage.getItem("profile")) || {};
+  const selectedCurrency = profile.currency || "₹";
+
+  const [budgets, setBudgets] = useState(
+    JSON.parse(localStorage.getItem("budgets")) || []
+  );
 
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
   const [editIndex, setEditIndex] = useState(null);
 
-  const profile = JSON.parse(localStorage.getItem("profile")) || {};
-  const currency = profile.currency || "₹";
+  const [showForm, setShowForm] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState(null);
 
   const rates = {
     "₹": 1,
@@ -22,17 +28,26 @@ function BudgetsPage() {
     "£": 0.0095,
   };
 
-  const month = new Date().toISOString().slice(0, 7);
+  const currentMonth = new Date().toISOString().slice(0, 7);
 
   useEffect(() => {
     localStorage.setItem("budgets", JSON.stringify(budgets));
   }, [budgets]);
 
-  function getSpent(cat) {
+  function convertAmount(value, fromCurrency) {
+    const source = fromCurrency || "₹";
+
+    if (source === selectedCurrency) return Number(value);
+
+    const inINR = Number(value) / rates[source];
+    return inINR * rates[selectedCurrency];
+  }
+
+  function getSpentForCategory(cat) {
     const transactions =
       JSON.parse(localStorage.getItem("transactions")) || [];
 
-    let spent = 0;
+    let total = 0;
 
     for (let i = 0; i < transactions.length; i++) {
       const t = transactions[i];
@@ -42,22 +57,22 @@ function BudgetsPage() {
         t.category &&
         t.category.trim().toLowerCase() === cat.trim().toLowerCase() &&
         t.date &&
-        t.date.slice(0, 7) === month
+        t.date.slice(0, 7) === currentMonth
       ) {
-        spent = spent + Number(t.amount);
+        total += convertAmount(t.amount, t.currency);
       }
     }
 
-    return spent;
+    return total;
   }
 
   useEffect(() => {
     for (let i = 0; i < budgets.length; i++) {
-      const b = budgets[i];
-      const spent = getSpent(b.category);
+      const spent = getSpentForCategory(budgets[i].category);
+      const limit = convertAmount(budgets[i].amount, budgets[i].currency);
 
-      if (spent > b.amount) {
-        toast.warning("Budget exceeded for " + b.category);
+      if (spent > limit) {
+        toast.warning("Budget exceeded for " + budgets[i].category);
       }
     }
   }, [budgets]);
@@ -65,17 +80,16 @@ function BudgetsPage() {
   function handleSubmit(e) {
     e.preventDefault();
 
-    if (category === "" || amount === "") {
+    if (category.trim() === "" || amount === "") {
       toast.error("Please enter category and amount");
       return;
     }
 
-    const cleanCat = category.trim();
-    const lowerCat = cleanCat.toLowerCase();
+    const cleanCategory = category.trim().toLowerCase();
 
     for (let i = 0; i < budgets.length; i++) {
       if (
-        budgets[i].category.trim().toLowerCase() === lowerCat &&
+        budgets[i].category.toLowerCase() === cleanCategory &&
         i !== editIndex
       ) {
         toast.error("Category already exists");
@@ -83,126 +97,165 @@ function BudgetsPage() {
       }
     }
 
-    const data = {
-      category: cleanCat,
-      amount: Number(toINR(amount)),
+    const budgetData = {
+      category: category.trim(),
+      amount: Number(amount),
+      currency: selectedCurrency,
     };
 
     if (editIndex !== null) {
       const copy = [...budgets];
-      copy[editIndex] = data;
+      copy[editIndex] = budgetData;
       setBudgets(copy);
-      setEditIndex(null);
       toast.success("Budget updated");
     } else {
-      setBudgets([...budgets, data]);
+      setBudgets([...budgets, budgetData]);
       toast.success("Budget added");
     }
 
+    closeForm();
+  }
+
+  function openAdd() {
     setCategory("");
     setAmount("");
+    setEditIndex(null);
+    setShowForm(true);
   }
 
-  function handleEdit(i) {
-    setCategory(budgets[i].category);
-    setAmount(convert(budgets[i].amount));
-    setEditIndex(i);
+  function handleEdit(index) {
+    setCategory(budgets[index].category);
+    setAmount(budgets[index].amount);
+    setEditIndex(index);
+    setShowForm(true);
   }
 
-  function handleDelete(i) {
-    const copy = budgets.filter((_, index) => index !== i);
-    setBudgets(copy);
+  function closeForm() {
+    setCategory("");
+    setAmount("");
+    setEditIndex(null);
+    setShowForm(false);
+  }
+
+  function askDelete(index) {
+    setDeleteIndex(index);
+    setShowDelete(true);
+  }
+
+  function confirmDelete() {
+    setBudgets(budgets.filter((_, i) => i !== deleteIndex));
     toast.success("Budget removed");
+    setShowDelete(false);
   }
-
-  function convert(val) {
-    return (val * rates[currency]).toFixed(2);
-  }
-  function toINR(val) {
-  return val / rates[currency];
-}
 
   return (
     <Container className={classes.mainContainer}>
-      <ToastContainer position="top-right" autoClose={2000} />
+      <ToastContainer autoClose={2000} />
 
-      <h2>Budgets</h2>
+      <Row className="mb-3">
+        <Col className="d-flex justify-content-between">
+          <h2>Budgets</h2>
+          <Button onClick={openAdd}>Add Budget</Button>
+        </Col>
+      </Row>
+      <Modal show={showForm} onHide={closeForm} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {editIndex !== null ? "Edit Budget" : "Add Budget"}
+          </Modal.Title>
+        </Modal.Header>
 
-      <form onSubmit={handleSubmit}>
-        <Row className="mb-3">
-          <Col md={5}>
-            <input className="form-control" placeholder="Category" value={category} onChange={(e) => setCategory(e.target.value)}/>
-          </Col>
+        <Modal.Body>
+          <form onSubmit={handleSubmit}>
+            <label>Category</label>
+            <input className="form-control" value={category} onChange={(e) => setCategory(e.target.value)}/>
+            <label className="mt-2"> Amount ({selectedCurrency})</label>
+            <input type="number" className="form-control" value={amount} onChange={(e) => setAmount(e.target.value)}/>
+            <div className="d-flex justify-content-end gap-2 mt-3">
+              <Button variant="secondary" onClick={closeForm}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                {editIndex !== null ? "Update" : "Add"}
+              </Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
+      <Modal show={showDelete} onHide={() => setShowDelete(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete Budget</Modal.Title>
+        </Modal.Header>
 
-          <Col md={4}>
-            <input type="number" className="form-control" placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)}/>
-          </Col>
+        <Modal.Body>
+          Are you sure you want to delete this budget?
+        </Modal.Body>
 
-          <Col md={3}>
-            <Button type="submit">
-              {editIndex !== null ? "Update" : "Add"}
-            </Button>
-          </Col>
-        </Row>
-      </form>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDelete(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete}>
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
-      <table className="table table-bordered">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Spent / Budget</th>
-            <th>Progress</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {budgets.length === 0 ? (
+      <div className={classes.budgetTable}>
+        <table>
+          <thead>
             <tr>
-              <td colSpan="4" className="text-center">
-                No budgets added
-              </td>
+              <th>Category</th>
+              <th>Spent / Budget</th>
+              <th>Progress</th>
+              <th>Action</th>
             </tr>
-          ) : (
-            budgets.map((b, i) => {
-              const spent = getSpent(b.category);
-              let percent = 0;
+          </thead>
 
-              if (b.amount > 0) {
-                percent = Math.round((spent * 100) / b.amount);
-              }
+          <tbody>
+            {budgets.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="text-center">
+                  No budgets added
+                </td>
+              </tr>
+            ) : (
+              budgets.map((b, i) => {
+                const spent = getSpentForCategory(b.category);
+                const limit = convertAmount(b.amount, b.currency);
+                const percent =
+                  limit > 0 ? Math.round((spent * 100) / limit) : 0;
 
-              return (
-                <tr key={i}>
-                  <td>{b.category}</td>
-                  <td>
-                    {currency} {convert(spent)} / {currency}{" "}
-                    {convert(b.amount)} ({percent}%)
-                  </td>
-                  <td>
-                    <div className="progress" style={{ height: "12px" }}>
-                      <div
-                        className={ percent > 100 ? "progress-bar bg-danger" : "progress-bar" } style={{width: percent > 100 ? "100%" : percent + "%",}}/>
-                    </div>
-                  </td>
-                  <td>
-                    <Container>
-                      <Row>
-                        <Col md={6} xs={12}>
-                         <Button size="sm" variant="outline-secondary"  style={{width:'100%'}} onClick={() => handleEdit(i)}>Edit</Button>
-                        </Col>
-                        <Col md={6} xs={12}>
-                         <Button size="sm" variant="outline-danger"style={{width:'100%'}}  onClick={() => handleDelete(i)}>Delete</Button>
-                        </Col>
-                      </Row>
-                     </Container>
-                     </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
+                return (
+                  <tr key={i}>
+                    <td>{b.category}</td>
+                    <td>
+                      {selectedCurrency} {spent.toFixed(2)} /{" "}
+                      {selectedCurrency} {limit.toFixed(2)} ({percent}%)
+                    </td>
+                    <td>
+                      <div className="progress" style={{ height: "12px" }}>
+                        <div
+                          className={ percent > 100 ? "progress-bar bg-danger" : "progress-bar" } style={{ width: percent > 100 ? "100%" : percent + "%",}}/>
+                      </div>
+                    </td>
+                    <td>
+                      <div className={classes.actions}>
+                        <span className={classes.actionBtn} onClick={() => handleEdit(i)}>
+                          <MdEdit size={20}/>
+                        </span>
+                        <span className={classes.actionBtn} onClick={() => askDelete(i)}>
+                          <MdDelete size={20}/>
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
     </Container>
   );
 }
