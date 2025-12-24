@@ -28,7 +28,7 @@
 .expenseTable table {
   width: 100%;
   font-size: 14px;
-  
+  text-align: left;
 }
 
 .expenseTable thead {
@@ -58,8 +58,8 @@
 }
 
 .tag {
-  background-color: #fde2e2;
-  color: #d6336c;
+  background-color: #b5daf5;
+  color: #234C6A;
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 12px;

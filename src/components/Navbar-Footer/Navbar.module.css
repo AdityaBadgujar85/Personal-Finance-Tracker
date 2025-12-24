@@ -22,7 +22,8 @@
     flex-direction: row;
     gap: 2rem;
     padding-right: 2rem;
+    font-size: medium;
 }
 .navLinksContainer :hover{
-     font-weight: 900;
+    color: #cccecf;
 }

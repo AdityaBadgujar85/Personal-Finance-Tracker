@@ -4,27 +4,31 @@ import classes from "./Transaction.module.css";
 import { MdEdit, MdDelete } from "react-icons/md";
 
 function Transaction(props) {
-  const { transactions, EditFunction, DeleteFunction } = props;
+  const transactions = props.transactions;
+  const onEdit = props.EditFunction;
+  const onDelete = props.DeleteFunction;
 
-  const profile = JSON.parse(localStorage.getItem("profile")) || {};
-  const selectedCurrency = profile.currency || "₹";
+  const savedProfile = JSON.parse(localStorage.getItem("profile")) || {};
+  const currency = savedProfile.currency || "₹";
 
-  const rates = {
+  const rateMap = {
     "₹": 1,
     "$": 0.012,
     "€": 0.011,
     "£": 0.0095,
   };
 
-  function showAmount(amount, fromCurrency) {
-    const sourceCurrency = fromCurrency || "₹";
+  function getDisplayAmount(amount, fromCurrency) {
+    const source = fromCurrency || "₹";
 
-    if (sourceCurrency === selectedCurrency) {
+    if (source === currency) {
       return Number(amount).toFixed(2);
     }
 
-    const amountInINR = Number(amount) / rates[sourceCurrency];
-    return (amountInINR * rates[selectedCurrency]).toFixed(2);
+    const baseValue = Number(amount) / rateMap[source];
+    const finalValue = baseValue * rateMap[currency];
+
+    return finalValue.toFixed(2);
   }
 
   return (
@@ -52,27 +56,24 @@ function Transaction(props) {
                     </td>
                   </tr>
                 ) : (
-                  transactions.map((t, index) => (
+                  transactions.map((item, index) => (
                     <tr key={index}>
-                      <td>{t.type}</td>
-                      <td className={classes.amount}>
-                        {selectedCurrency}{" "}
-                        {showAmount(t.amount, t.currency)}
-                      </td>
+                      <td>{item.type}</td>
+                      <td className={classes.amount}>{currency} {getDisplayAmount(item.amount, item.currency)}</td>
                       <td>
                         <span className={classes.tag}>
-                          {t.category || "Other"}
+                          {item.category || "Other"}
                         </span>
                       </td>
-                      <td>{t.date}</td>
-                      <td>{t.description || "-"}</td>
+                      <td>{item.date}</td>
+                      <td>{item.description || "-"}</td>
                       <td>
                         <div className={classes.actions}>
-                          <span className={classes.actionBtn} onClick={() => EditFunction(index)}>
-                            <MdEdit size={20}/>
+                          <span className={classes.actionBtn} onClick={() => onEdit(index)}>
+                            <MdEdit size={20} />
                           </span>
-                          <span className={classes.actionBtn} onClick={() => DeleteFunction(index)}>
-                            <MdDelete size={20}/>
+                          <span className={classes.actionBtn} onClick={() => onDelete(index)}>
+                            <MdDelete size={20} />
                           </span>
                         </div>
                       </td>

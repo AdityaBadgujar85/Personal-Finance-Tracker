@@ -10,11 +10,13 @@
   overflow-x: auto;
   margin-top: 20px;
   box-shadow: 0 0 0 1px #eee;
+  text-align: left;
 }
 
 .budgetTable table {
   width: 100%;
   font-size: 14px;
+  text-align: left;
 }
 
 .budgetTable thead {
@@ -32,6 +34,7 @@
   color: #333;
   border-bottom: 1px solid #f0f0f0;
   vertical-align: middle;
+  width: 100px;
 }
 
 .budgetTable .progress {
@@ -44,7 +47,7 @@
 }
 .actions{
   display: flex;
-  justify-content: center;
+  text-align: left;
   flex-direction: row;
   gap: 1rem;
 }

@@ -4,56 +4,66 @@ import classes from "./Profile.module.css";
 
 function ProfilePage() {
   const [currency, setCurrency] = useState("₹");
-  const [income, setIncome] = useState(0);
-  const [expense, setExpense] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const rates = {
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpense, setTotalExpense] = useState(0);
+  const [isReady, setIsReady] = useState(false);
+
+  const currencyRates = {
     "₹": 1,
     "$": 0.012,
     "€": 0.011,
     "£": 0.0095,
   };
 
-  function convert(value) {
-    return (value * rates[currency]).toFixed(2);
+  function convertAmount(amount) {
+    const rate = currencyRates[currency];
+    return (amount * rate).toFixed(2);
   }
+
   useEffect(() => {
-    const savedProfile = JSON.parse(localStorage.getItem("profile"));
-    if (savedProfile && savedProfile.currency) {
-      setCurrency(savedProfile.currency);
-    }
-
-    const transactions =
-      JSON.parse(localStorage.getItem("transactions")) || [];
-
-    let inc = 0;
-    let exp = 0;
-
-    for (let i = 0; i < transactions.length; i++) {
-      if (transactions[i].type === "Income") {
-        inc += Number(transactions[i].amount || 0);
-      } else {
-        exp += Number(transactions[i].amount || 0);
+    const savedProfile = localStorage.getItem("profile");
+    if (savedProfile) {
+      const profileData = JSON.parse(savedProfile);
+      if (profileData.currency) {
+        setCurrency(profileData.currency);
       }
     }
 
-    setIncome(inc);
-    setExpense(exp);
-    setLoaded(true);
+    const savedTransactions =
+      JSON.parse(localStorage.getItem("transactions")) || [];
+
+    let incomeSum = 0;
+    let expenseSum = 0;
+
+    for (let index = 0; index < savedTransactions.length; index++) {
+      const currentItem = savedTransactions[index];
+
+      if (currentItem.type === "Income") {
+        incomeSum = incomeSum + Number(currentItem.amount || 0);
+      } else {
+        expenseSum = expenseSum + Number(currentItem.amount || 0);
+      }
+    }
+
+    setTotalIncome(incomeSum);
+    setTotalExpense(expenseSum);
+    setIsReady(true);
   }, []);
 
-
   useEffect(() => {
-    if (loaded) {
-      localStorage.setItem("profile", JSON.stringify({ currency }));
+    if (isReady) {
+      localStorage.setItem("profile",JSON.stringify({
+          currency: currency,
+        })
+      );
     }
-  }, [currency, loaded]);
+  }, [currency, isReady]);
 
-  const remaining = income - expense;
+  const remainingAmount = totalIncome - totalExpense;
 
   return (
     <Container className={classes.mainContainer}>
-      <Card className={classes.profileWrapper}>
+      <Card className={classes.profileContainer}>
         <Row className={classes.topRow}>
           <Col md={6} className={classes.userInfo}>
             <img src={require("../Img/Profile.jpg")} alt="Profile" className={classes.profileImg}/>
@@ -63,9 +73,7 @@ function ProfilePage() {
             </div>
           </Col>
         </Row>
-
         <hr />
-
         <Row className={classes.statsRow}>
           <Col md={3}>
             <p className={classes.statTitle}>Currency</p>
@@ -79,17 +87,23 @@ function ProfilePage() {
 
           <Col md={3}>
             <p className={classes.statTitle}>Total Income</p>
-            <h3>{currency} {convert(income)}</h3>
+            <h3>
+              {currency} {convertAmount(totalIncome)}
+            </h3>
           </Col>
 
           <Col md={3}>
             <p className={classes.statTitle}>Total Expense</p>
-            <h3>{currency} {convert(expense)}</h3>
+            <h3>
+              {currency} {convertAmount(totalExpense)}
+            </h3>
           </Col>
 
           <Col md={3}>
             <p className={classes.statTitle}>Remaining</p>
-            <h3>{currency} {convert(remaining)}</h3>
+            <h3>
+              {currency} {convertAmount(remainingAmount)}
+            </h3>
           </Col>
         </Row>
       </Card>

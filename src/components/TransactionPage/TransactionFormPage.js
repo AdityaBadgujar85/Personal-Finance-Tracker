@@ -6,128 +6,155 @@ import Transaction from "./Transaction";
 import classes from "./TransactionForm.module.css";
 
 function TransactionFormPage() {
-  const profile = JSON.parse(localStorage.getItem("profile")) || {};
-  const selectedCurrency = profile.currency || "₹";
+  const savedProfile = JSON.parse(localStorage.getItem("profile")) || {};
+  const currency = savedProfile.currency || "₹";
+
+  const rateMap = {
+    "₹": 1,
+    "$": 0.012,
+    "€": 0.011,
+    "£": 0.0095,
+  };
 
   const [showForm, setShowForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [editIndex, setEditIndex] = useState(null);
 
-  const [formValues, setFormValues] = useState({
+  const [transactions, setTransactions] = useState(
+    JSON.parse(localStorage.getItem("transactions")) || []
+  );
+
+  const [formData, setFormData] = useState({
     type: "Income",
     amount: "",
     category: "",
     date: "",
     description: "",
-    currency: selectedCurrency,
   });
 
-  const [transactionList, setTransactionList] = useState(
-    JSON.parse(localStorage.getItem("transactions") || "[]")
-  );
-
   useEffect(() => {
-    localStorage.setItem("transactions", JSON.stringify(transactionList));
-  }, [transactionList]);
+    localStorage.setItem("transactions", JSON.stringify(transactions));
+  }, [transactions]);
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setFormValues({ ...formValues, [name]: value });
-  }
-
-  function resetForm() {
-    setFormValues({
+  function clearForm() {
+    setFormData({
       type: "Income",
       amount: "",
       category: "",
       date: "",
       description: "",
-      currency: selectedCurrency,
     });
-    setEditingIndex(null);
+    setEditIndex(null);
     setShowForm(false);
   }
 
-  function handleSubmit(e) {
+  function inputChange(e) {
+    const name = e.target.name;
+    const value = e.target.value;
+
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  }
+
+  function getTotals(skipIndex = null) {
+    let income = 0;
+    let expense = 0;
+
+    for (let i = 0; i < transactions.length; i++) {
+      if (i === skipIndex) continue;
+
+      const t = transactions[i];
+
+      if (t.type === "Income") {
+        income = income + Number(t.amount);
+      }
+
+      if (t.type === "Expense") {
+        expense = expense + Number(t.amount);
+      }
+    }
+
+    return { income, expense };
+  }
+
+  function submitHandler(e) {
     e.preventDefault();
 
-    const { type, amount, category, date, description } = formValues;
+    const { type, amount, category, date, description } = formData;
 
     if (!type || !amount || !category || !date || !description) {
       toast.error("All fields required");
       return;
     }
 
-    let totalIncome = 0;
-    let totalExpense = 0;
+    const baseAmount = Number(amount) / rateMap[currency];
+    const totals = getTotals(editIndex);
 
-    transactionList.forEach((item, index) => {
-      if (editingIndex !== null && index === editingIndex) 
-        return;
-
-      if (item.type === "Income") 
-        totalIncome += Number(item.amount);
-      if (item.type === "Expense") 
-        totalExpense += Number(item.amount);
-    });
-
-    if (
-      type === "Expense" &&
-      totalExpense + Number(amount) > totalIncome
-    ) {
-      toast.error("Expense cannot be more than income");
-      return;
-    }
-
-    if (editingIndex !== null) {
-      const updated = [...transactionList];
-      updated[editingIndex] = formValues;
-      setTransactionList(updated);
-      toast.success("Transaction updated");
-    } else {
-      setTransactionList([...transactionList, formValues]);
-      toast.success("Transaction added");
-    }
-
-    resetForm();
-  }
-
-  function handleEdit(index) {
-    setFormValues(transactionList[index]);
-    setEditingIndex(index);
-    setShowForm(true);
-  }
-
-  function askDelete(index) {
-    setDeleteIndex(index);
-    setShowDelete(true);
-  }
-
-  function confirmDelete() {
-    const item = transactionList[deleteIndex];
-
-    if (item.type === "Income") {
-      let income = 0;
-      let expense = 0;
-
-      transactionList.forEach((t, i) => {
-        if (i !== deleteIndex) {
-          if (t.type === "Income") income += Number(t.amount);
-          if (t.type === "Expense") expense += Number(t.amount);
-        }
-      });
-
-      if (expense > income) {
-        toast.error("Cannot delete income. Expenses depend on it.");
-        setShowDelete(false);
+    if (type === "Expense") {
+      if (totals.expense + baseAmount > totals.income) {
+        toast.error("Expense cannot exceed income");
         return;
       }
     }
 
-    const updated = [...transactionList];
+    if (type === "Income" && editIndex !== null) {
+      if (baseAmount < totals.expense) {
+        toast.error("Income cannot be less than total expense");
+        return;
+      }
+    }
+
+    const newTransaction = {
+      type,
+      amount: baseAmount,
+      category,
+      date,
+      description,
+    };
+
+    if (editIndex !== null) {
+      const copy = [...transactions];
+      copy[editIndex] = newTransaction;
+      setTransactions(copy);
+      toast.success("Transaction updated");
+    } else {
+      setTransactions([...transactions, newTransaction]);
+      toast.success("Transaction added");
+    }
+
+    clearForm();
+  }
+
+  function editTransaction(index) {
+    const t = transactions[index];
+    setFormData({...t,amount: (t.amount * rateMap[currency]).toFixed(2)});
+
+    setEditIndex(index);
+    setShowForm(true);
+  }
+
+  function requestDelete(index) {
+    setDeleteIndex(index);
+    setShowDelete(true);
+  }
+
+  function deleteTransaction() {
+    const item = transactions[deleteIndex];
+    const totals = getTotals(deleteIndex);
+
+    if (item.type === "Income" && totals.expense > totals.income) {
+      toast.error("Cannot delete income. Expenses depend on it.");
+      setShowDelete(false);
+      return;
+    }
+
+    const updated = [...transactions];
     updated.splice(deleteIndex, 1);
-    setTransactionList(updated);
+    setTransactions(updated);
+
     toast.success("Transaction deleted");
     setShowDelete(false);
   }
@@ -137,42 +164,42 @@ function TransactionFormPage() {
       <ToastContainer autoClose={2000} />
 
       <Row>
-        <Col style={{ display: "flex", justifyContent: "space-between" }}>
+        <Col className="d-flex justify-content-between">
           <h2>Transactions</h2>
-          <Button onClick={() => setShowForm(true)}>Add Transaction</Button>
+          <Button style={{ background: "#234C6A", border: "none" }} onClick={() => setShowForm(true)}> Add Transaction </Button>
         </Col>
       </Row>
 
-      <Modal show={showForm} onHide={resetForm} centered>
+      <Modal show={showForm} onHide={clearForm} centered>
         <Modal.Header closeButton>
           <Modal.Title>
-            {editingIndex !== null ? "Edit Transaction" : "Add Transaction"}
+            {editIndex !== null ? "Edit Transaction" : "Add Transaction"}
           </Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={submitHandler}>
             <label>Type</label>
-            <select name="type" className="form-select" value={formValues.type} onChange={handleChange}>
+            <select name="type" className="form-select" value={formData.type} onChange={inputChange}>
               <option>Income</option>
               <option>Expense</option>
             </select>
 
-            <label className="mt-2"> Amount ({selectedCurrency})</label>
-            <input name="amount" type="number" className="form-control" value={formValues.amount} onChange={handleChange}/>
+            <label className="mt-2">Amount ({currency})</label>
+            <input type="number" name="amount" className="form-control" value={formData.amount} onChange={inputChange}/>
 
             <label className="mt-2">Category</label>
-            <input name="category" className="form-control" value={formValues.category} onChange={handleChange}/>
+            <input name="category" className="form-control" value={formData.category} onChange={inputChange}/>
 
             <label className="mt-2">Date</label>
-            <input name="date" type="date" className="form-control" max={new Date().toISOString().split("T")[0]} value={formValues.date} onChange={handleChange}/>
+            <input type="date" name="date" className="form-control" max={new Date().toISOString().split("T")[0]} value={formData.date} onChange={inputChange}/>
 
             <label className="mt-2">Description</label>
-            <textarea name="description" className="form-control" value={formValues.description} onChange={handleChange}/>
+            <textarea name="description" className="form-control" value={formData.description} onChange={inputChange}/>
             <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button variant="secondary" onClick={resetForm}> Cancel </Button>
-              <Button type="submit">
-                {editingIndex !== null ? "Update" : "Add"}
+              <Button variant="secondary" onClick={clearForm}>Cancel</Button>
+              <Button type="submit" style={{ background: "#234C6A", border: "none" }}>
+                {editIndex !== null ? "Update" : "Add"}
               </Button>
             </div>
           </form>
@@ -183,18 +210,18 @@ function TransactionFormPage() {
         <Modal.Header closeButton>
           <Modal.Title>Confirm Delete</Modal.Title>
         </Modal.Header>
-
-        <Modal.Body>
-          Are you sure you want to delete this transaction?
-        </Modal.Body>
-
+        <Modal.Body>Are you sure?</Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDelete(false)}> Cancel </Button>
-          <Button variant="danger" onClick={confirmDelete}> Delete</Button>
+          <Button variant="secondary" onClick={() => setShowDelete(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={deleteTransaction}>
+            Delete
+          </Button>
         </Modal.Footer>
       </Modal>
 
-      <Transaction transactions={transactionList} EditFunction={handleEdit} DeleteFunction={askDelete}/>
+      <Transaction transactions={transactions} EditFunction={editTransaction} DeleteFunction={requestDelete}/>
     </Container>
   );
 }
